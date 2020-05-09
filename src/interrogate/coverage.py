@@ -31,6 +31,7 @@ class BaseInterrogateResult:
     total = attr.ib(init=False, default=0)
     covered = attr.ib(init=False, default=0)
     missing = attr.ib(init=False, default=0)
+    function_quality_score = attr.ib(init=False, default=0)
 
     @property
     def perc_covered(self):
@@ -62,6 +63,7 @@ class InterrogateFileResult(BaseInterrogateResult):
 
     def combine(self):
         """Tally results from each AST node visited."""
+        function_def_count = 0;
         for node in self.nodes:
             if node.node_type == "Module":
                 if self.ignore_module:
@@ -69,8 +71,13 @@ class InterrogateFileResult(BaseInterrogateResult):
             self.total += 1
             if node.covered:
                 self.covered += 1
+                if node.node_type == "FunctionDef":
+                    function_def_count += 1
+                    self.function_quality_score += node.function_quality_score
 
         self.missing = self.total - self.covered
+        if function_def_count > 0:
+            self.function_quality_score = self.function_quality_score / function_def_count
 
 
 @attr.s
@@ -92,6 +99,7 @@ class InterrogateResults(BaseInterrogateResult):
             self.covered += result.covered
             self.missing += result.missing
             self.total += result.total
+            self.function_quality_score += result.function_quality_score
 
 
 class InterrogateCoverage:

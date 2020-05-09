@@ -18,7 +18,7 @@ class CovNode:
     :param int level: Level of recursiveness/indentation
     :param int lineno: Line number of class, method, or function.
     :param bool covered: Has a docstring
-    :param bool quality: Quality of the docstring
+    :param bool function_quality_score: Quality of the docstring
     :param str node_type: type of node (e.g "module", "class", or
         "function").
     """
@@ -28,7 +28,7 @@ class CovNode:
     level = attr.ib()
     lineno = attr.ib()
     covered = attr.ib()
-    quality = attr.ib()
+    # function_quality_score = attr.ib()
     node_type = attr.ib()
 
 
@@ -60,10 +60,10 @@ class CoverageVisitor(ast.NodeVisitor):
         1: partial match between docstring and signature
         2: full match between docstring and signature
         """
-        return (
-                ast.get_docstring(node) is not None
-                and ast.get_docstring(node).strip() != ""
-        )
+        if not CoverageVisitor._has_doc(node):
+            return 0
+
+        return 0
 
     def _visit_helper(self, node):
         """Recursively visit AST node for docstrings."""
@@ -90,11 +90,14 @@ class CoverageVisitor(ast.NodeVisitor):
             name=node_name,
             path=path,
             covered=self._has_doc(node),
-            quality=self._quality(node),
             level=len(self.stack),
             node_type=type(node).__name__,
             lineno=lineno,
         )
+        if cov_node.node_type == "FunctionDef" and cov_node.covered:
+            cov_node.function_quality_score = self._quality(node)
+
+
         self.stack.append(cov_node)
         self.nodes.append(cov_node)
 
