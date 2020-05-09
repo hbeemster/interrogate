@@ -15,7 +15,7 @@ FIXTURES = os.path.join(HERE, "fixtures")
 @pytest.mark.parametrize(
     "paths,conf,exp_results",
     (
-        ([os.path.join(DOCSTRING_CONTENT, "foo.py"),], {}, (4, 4, 0, "100.0")),
+        ([os.path.join(DOCSTRING_CONTENT, "foo.py"),], {}, (4, 4, 0, "100.0", 0)),
     ),
 )
 
@@ -30,3 +30,4 @@ def test_coverage_simple(paths, conf, exp_results, mocker):
     assert exp_results[1] == results.covered
     assert exp_results[2] == results.missing
     assert exp_results[3] == "{:.1f}".format(results.perc_covered)
+    assert exp_results[4] == results.quality

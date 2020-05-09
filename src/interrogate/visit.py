@@ -18,6 +18,7 @@ class CovNode:
     :param int level: Level of recursiveness/indentation
     :param int lineno: Line number of class, method, or function.
     :param bool covered: Has a docstring
+    :param bool quality: Quality of the docstring
     :param str node_type: type of node (e.g "module", "class", or
         "function").
     """
@@ -27,6 +28,7 @@ class CovNode:
     level = attr.ib()
     lineno = attr.ib()
     covered = attr.ib()
+    quality = attr.ib()
     node_type = attr.ib()
 
 
@@ -49,6 +51,18 @@ class CoverageVisitor(ast.NodeVisitor):
         return (
             ast.get_docstring(node) is not None
             and ast.get_docstring(node).strip() != ""
+        )
+
+    @staticmethod
+    def _quality(node):
+        """Return Quality classification of the docstring.
+        0: not match between docstring and signature
+        1: partial match between docstring and signature
+        2: full match between docstring and signature
+        """
+        return (
+                ast.get_docstring(node) is not None
+                and ast.get_docstring(node).strip() != ""
         )
 
     def _visit_helper(self, node):
@@ -76,6 +90,7 @@ class CoverageVisitor(ast.NodeVisitor):
             name=node_name,
             path=path,
             covered=self._has_doc(node),
+            quality=self._quality(node),
             level=len(self.stack),
             node_type=type(node).__name__,
             lineno=lineno,
