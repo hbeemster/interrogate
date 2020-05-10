@@ -18,7 +18,7 @@ FIXTURES = os.path.join(HERE, "fixtures")
         (
             [os.path.join(DOCSTRING_CONTENT, "foo_method.py")],
             {},
-            (6, 6, 0, "100.0", "80.0"),
+            (6, 6, 0, "100.0", "58.3"),
         ),
     ),
 )

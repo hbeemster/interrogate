@@ -64,7 +64,6 @@ class CoverageVisitor(ast.NodeVisitor):
         if not CoverageVisitor._has_doc(node):
             return 0
 
-
         return CoverageVisitor._visit_arguments(node)
 
         # # test for args
@@ -79,39 +78,24 @@ class CoverageVisitor(ast.NodeVisitor):
 
     @staticmethod
     def _visit_arguments(node):
-        scores = 0
-        # if hasattr(node, 'posonlyargs') and node.posonlyargs:
-        #     node.posonlyargs = [CoverageVisitor._visit_arg(a) for a in node.posonlyargs]
-
+        """Calculate the score of matching arguments in the docstring of the node"""
+        scores = 0.0
         if node.args:
-            scores = sum(CoverageVisitor._visit_arg(a, ast.get_docstring(node)) for a in node.args.args)
-
-        # if hasattr(node, 'kwonlyargs') and node.kwonlyargs:
-        #     node.kwonlyargs = [CoverageVisitor._visit_arg(a) for a in node.kwonlyargs]
-        #
-        # if hasattr(node, 'varargannotation'):
-        #     node.varargannotation = None
-        # else:
-        #     if node.vararg:
-        #         node.vararg = CoverageVisitor._visit_arg(node.vararg)
-        #
-        # if hasattr(node, 'kwargannotation'):
-        #     node.kwargannotation = None
-        # else:
-        #     if node.kwarg:
-        #         node.kwarg = CoverageVisitor._visit_arg(node.kwarg)
+            proper_args = [a for a in node.args.args if a.arg != "self"]
+            if len(proper_args) == 0:
+                scores += 1.0
+            else:
+                docstring = ast.get_docstring(node)
+                scores += sum(
+                    CoverageVisitor._visit_arg(a, docstring)
+                    for a in proper_args
+                ) / len(proper_args)
 
         return scores
 
     def _visit_arg(node, docstring):
         """get score"""
-        # node.annotation = None
-        if node.arg == "self":
-            return 2
-        elif node.arg in docstring:
-            return 2
-        else:
-            return 0
+        return 1 if node.arg in docstring else 0
 
     def _visit_helper(self, node):
         """Recursively visit AST node for docstrings."""
@@ -143,8 +127,9 @@ class CoverageVisitor(ast.NodeVisitor):
             lineno=lineno,
         )
         if cov_node.node_type == "FunctionDef" and cov_node.covered:
-            cov_node.function_quality_score = self._function_quality_score(node)
-
+            cov_node.function_quality_score = self._function_quality_score(
+                node
+            )
 
         self.stack.append(cov_node)
         self.nodes.append(cov_node)
