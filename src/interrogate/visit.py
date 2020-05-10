@@ -18,7 +18,7 @@ class CovNode:
     :param int level: Level of recursiveness/indentation
     :param int lineno: Line number of class, method, or function.
     :param bool covered: Has a docstring
-    :param bool function_quality_score: Quality of the docstring
+    :param bool perc_function_quality_score: Quality of the docstring
     :param str node_type: type of node (e.g "module", "class", or
         "function").
     """
@@ -28,7 +28,7 @@ class CovNode:
     level = attr.ib()
     lineno = attr.ib()
     covered = attr.ib()
-    # function_quality_score = attr.ib()
+    # perc_function_quality_score = attr.ib()
     node_type = attr.ib()
 
 
@@ -54,8 +54,9 @@ class CoverageVisitor(ast.NodeVisitor):
         )
 
     @staticmethod
-    def _quality(node):
-        """Return Quality classification of the docstring.
+    def _function_quality_score(node):
+        """Return Quality score of the docstring.
+
         0: not match between docstring and signature
         1: partial match between docstring and signature
         2: full match between docstring and signature
@@ -63,7 +64,54 @@ class CoverageVisitor(ast.NodeVisitor):
         if not CoverageVisitor._has_doc(node):
             return 0
 
-        return 0
+
+        return CoverageVisitor._visit_arguments(node)
+
+        # # test for args
+        # # function
+        # if not node.args.args:
+        #     return 2
+        # # class method
+        # elif node.args.args and len(node.args.args) == 1 and node.args.args[0].arg == "self":
+        #     return 2
+        # else:
+        #     return 0
+
+    @staticmethod
+    def _visit_arguments(node):
+        scores = 0
+        # if hasattr(node, 'posonlyargs') and node.posonlyargs:
+        #     node.posonlyargs = [CoverageVisitor._visit_arg(a) for a in node.posonlyargs]
+
+        if node.args:
+            scores = sum(CoverageVisitor._visit_arg(a, ast.get_docstring(node)) for a in node.args.args)
+
+        # if hasattr(node, 'kwonlyargs') and node.kwonlyargs:
+        #     node.kwonlyargs = [CoverageVisitor._visit_arg(a) for a in node.kwonlyargs]
+        #
+        # if hasattr(node, 'varargannotation'):
+        #     node.varargannotation = None
+        # else:
+        #     if node.vararg:
+        #         node.vararg = CoverageVisitor._visit_arg(node.vararg)
+        #
+        # if hasattr(node, 'kwargannotation'):
+        #     node.kwargannotation = None
+        # else:
+        #     if node.kwarg:
+        #         node.kwarg = CoverageVisitor._visit_arg(node.kwarg)
+
+        return scores
+
+    def _visit_arg(node, docstring):
+        """get score"""
+        # node.annotation = None
+        if node.arg == "self":
+            return 2
+        elif node.arg in docstring:
+            return 2
+        else:
+            return 0
 
     def _visit_helper(self, node):
         """Recursively visit AST node for docstrings."""
@@ -95,7 +143,7 @@ class CoverageVisitor(ast.NodeVisitor):
             lineno=lineno,
         )
         if cov_node.node_type == "FunctionDef" and cov_node.covered:
-            cov_node.function_quality_score = self._quality(node)
+            cov_node.function_quality_score = self._function_quality_score(node)
 
 
         self.stack.append(cov_node)
